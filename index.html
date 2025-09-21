@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroFlow | Personal Energy Tracker</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600&family=Orbitron:wght@400;500&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-glow: #7e22ce;
+            --secondary-glow: #3b82f6;
+            --accent-glow: #06b6d4;
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background-color: var(--background);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(126, 34, 206, 0.1), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.1), transparent 25%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            background: linear-gradient(to right, var(--primary-glow), var(--accent-glow));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(126, 34, 206, 0.5);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(to right, var(--primary-glow), var(--accent-glow));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .user-status {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-glow), transparent);
+            z-index: 1;
+        }
+
+        .card:hover {
+            box-shadow: 0 0 20px rgba(126, 34, 206, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title i {
+            color: var(--accent-glow);
+            text-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        /* Energy Wave Visualization */
+        .energy-wave {
+            grid-column: span 8;
+            height: 300px;
+            position: relative;
+        }
+
+        .wave-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        canvas#energyWave {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+        }
+
+        .wave-controls {
+            position: absolute;
+            bottom: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+
+        .wave-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(126, 34, 206, 0.3);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wave-btn.active {
+            background: rgba(126, 34, 206, 0.3);
+            color: var(--text-primary);
+            border-color: var(--primary-glow);
+        }
+
+        .wave-btn:hover {
+            border-color: var(--primary-glow);
+            color: var(--text-primary);
+            box-shadow: 0 0 8px rgba(126, 34, 206, 0.5);
+        }
+
+        /* Stats Overview */
+        .stats-overview {
+            grid-column: span 4;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            background: rgba(30, 41, 59, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid;
+            font-size: 1.2rem;
+        }
+
+        .sleep .stat-icon {
+            border-color: var(--primary-glow);
+            color: var(--primary-glow);
+            text-shadow: 0 0 8px rgba(126, 34, 206, 0.7);
+        }
+
+        .productivity .stat-icon {
+            border-color: var(--accent-glow);
+            color: var(--accent-glow);
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.7);
+        }
+
+        .mood .stat-icon {
+            border-color: var(--success);
+            color: var(--success);
+            text-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+        }
+
+        .focus .stat-icon {
+            border-color: var(--secondary-glow);
+            color: var(--secondary-glow);
+            text-shadow: 0 0 8px rgba(59, 130, 246, 0.7);
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Personal Energy Profile */
+        .energy-profile {
+            grid-column: span 6;
+        }
+
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .profile-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .profile-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+
+        .profile-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .profile-bar {
+            height: 8px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .profile-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .mental .profile-fill {
+            background: linear-gradient(to right, var(--primary-glow), var(--secondary-glow));
+        }
+
+        .physical .profile-fill {
+            background: linear-gradient(to right, var(--accent-glow), var(--success));
+        }
+
+        .emotional .profile-fill {
+            background: linear-gradient(to right, var(--warning), var(--danger));
+        }
+
+        /* Daily Energy Flow */
+        .daily-energy {
+            grid-column: span 6;
+            height: 300px;
+        }
+
+        /* Energy Distribution */
+        .energy-distribution {
+            grid-column: span 4;
+            height: 300px;
+        }
+
+        /* Energy Recommendations */
+        .energy-recommendations {
+            grid-column: span 4;
+        }
+
+        .recommendations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            padding: 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-item:hover {
+            background: rgba(30, 41, 59, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .recommendation-icon {
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+        }
+
+        .recommendation-content {
+            flex: 1;
+        }
+
+        .recommendation-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .recommendation-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Energy Goals */
+        .energy-goals {
+            grid-column: span 4;
+        }
+
+        .goals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .goal-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 1rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .goal-item:hover {
+            background: rgba(30, 41, 59, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .goal-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .goal-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .goal-checkbox.checked::after {
+            content: "✓";
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .goal-content {
+            flex: 1;
+        }
+
+        .goal-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .goal-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Add Goal Form */
+        .add-goal-form {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .goal-input {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(126, 34, 206, 0.3);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .goal-input:focus {
+            border-color: var(--primary-glow);
+        }
+
+        .add-goal-btn {
+            background: linear-gradient(to right, var(--primary-glow), var(--secondary-glow));
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* Input Controls */
+        .input-controls {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .input-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        /* Dynamic slider colors based on value */
+        #sleepSlider {
+            background: linear-gradient(to right, #ef4444, #f59e0b, #22c55e);
+        }
+
+        #productivitySlider {
+            background: linear-gradient(to right, #ef4444, #f59e0b, #22c55e);
+        }
+
+        #moodSlider {
+            background: linear-gradient(to right, #ef4444, #f59e0b, #22c55e);
+        }
+
+        #focusSlider {
+            background: linear-gradient(to right, #ef4444, #f59e0b, #22c55e);
+        }
+
+        .input-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(126, 34, 206, 0.8);
+        }
+
+        .input-btn {
+            background: linear-gradient(to right, var(--primary-glow), var(--secondary-glow));
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .input-btn:hover {
+            box-shadow: 0 0 15px rgba(126, 34, 206, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface);
+            color: var(--text-primary);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid var(--success);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        .pulse {
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px var(--primary-glow); }
+            50% { box-shadow: 0 0 20px var(--primary-glow); }
+            100% { box-shadow: 0 0 5px var(--primary-glow); }
+        }
+
+        .glow {
+            animation: glow 4s infinite ease-in-out;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .energy-wave {
+                grid-column: span 6;
+            }
+            
+            .stats-overview {
+                grid-column: span 6;
+            }
+            
+            .energy-profile, .daily-energy {
+                grid-column: span 3;
+            }
+            
+            .energy-distribution, .energy-recommendations, .energy-goals {
+                grid-column: span 6;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .energy-wave {
+                height: 250px;
+            }
+            
+            .daily-energy {
+                height: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .energy-wave, .stats-overview, .energy-profile, 
+            .daily-energy, .energy-distribution, .energy-recommendations, .energy-goals {
+                grid-column: 1;
+            }
+            
+            .energy-wave {
+                height: 220px;
+            }
+            
+            .daily-energy {
+                height: 220px;
+            }
+            
+            .input-controls {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .card {
+                padding: 1.2rem;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .logo {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.8rem;
+            }
+            
+            .energy-wave {
+                height: 200px;
+            }
+            
+            .daily-energy {
+                height: 200px;
+            }
+            
+            .stat-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.3rem;
+            }
+            
+            .card-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">NEUROFLOW</div>
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">Your Energy Profile</div>
+                    <div class="user-status">
+                        <span class="status-indicator"></span>
+                        <span id="userStatus">Optimal Energy Level</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Energy Wave Visualization -->
+            <div class="card energy-wave">
+                <h2 class="card-title"><i class="icon">🌊</i> Your Energy Flow</h2>
+                <div class="wave-container">
+                    <canvas id="energyWave"></canvas>
+                    <div class="wave-controls">
+                        <button class="wave-btn active">Today</button>
+                        <button class="wave-btn">Week</button>
+                        <button class="wave-btn">Month</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="card stats-overview">
+                <h2 class="card-title"><i class="icon">📊</i> Current State</h2>
+                
+                <div class="stat-item sleep">
+                    <div class="stat-icon">💤</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="currentSleep">7h 32m</div>
+                        <div class="stat-label">Sleep</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item productivity">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="currentProductivity">84%</div>
+                        <div class="stat-label">Productivity</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item mood">
+                    <div class="stat-icon">😊</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="currentMood">8.2</div>
+                        <div class="stat-label">Mood</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item focus">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="currentFocus">76%</div>
+                        <div class="stat-label">Focus</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Energy Profile -->
+            <div class="card energy-profile">
+                <h2 class="card-title"><i class="icon">🔋</i> Your Energy Profile</h2>
+                <div class="profile-container">
+                    <div class="profile-item mental">
+                        <div class="profile-label">
+                            <span>Mental Energy</span>
+                            <span class="profile-value" id="mentalValue">72%</span>
+                        </div>
+                        <div class="profile-bar">
+                            <div class="profile-fill" id="mentalFill" style="width: 72%"></div>
+                        </div>
+                    </div>
+                    <div class="profile-item physical">
+                        <div class="profile-label">
+                            <span>Physical Energy</span>
+                            <span class="profile-value" id="physicalValue">65%</span>
+                        </div>
+                        <div class="profile-bar">
+                            <div class="profile-fill" id="physicalFill" style="width: 65%"></div>
+                        </div>
+                    </div>
+                    <div class="profile-item emotional">
+                        <div class="profile-label">
+                            <span>Emotional Energy</span>
+                            <span class="profile-value" id="emotionalValue">78%</span>
+                        </div>
+                        <div class="profile-bar">
+                            <div class="profile-fill" id="emotionalFill" style="width: 78%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Energy Flow -->
+            <div class="card daily-energy">
+                <h2 class="card-title"><i class="icon">🌙</i> Daily Energy Rhythm</h2>
+                <div class="metric-chart-container">
+                    <canvas id="rhythmChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Energy Distribution -->
+            <div class="card energy-distribution">
+                <h2 class="card-title"><i class="icon">🌀</i> Energy Distribution</h2>
+                <div class="metric-chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Energy Recommendations -->
+            <div class="card energy-recommendations">
+                <h2 class="card-title"><i class="icon">💡</i> Energy Recommendations</h2>
+                <div class="recommendations-list">
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">💧</div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-title">Increase water intake</div>
+                            <div class="recommendation-desc">You've only had 1.2L of water today, recommended is 2L</div>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">🚶</div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-title">Short walk</div>
+                            <div class="recommendation-desc">Low movement level, a 15-minute walk will increase energy</div>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <div class="recommendation-icon">🧘</div>
+                        <div class="recommendation-content">
+                            <div class="recommendation-title">Deep breathing</div>
+                            <div class="recommendation-desc">5 minutes of deep breathing will reduce stress and increase focus</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy Goals -->
+            <div class="card energy-goals">
+                <h2 class="card-title"><i class="icon">🎯</i> Your Energy Goals</h2>
+                <div class="goals-list" id="goalsList">
+                    <!-- Goals will be added here dynamically -->
+                </div>
+                <div class="add-goal-form">
+                    <input type="text" class="goal-input" id="goalInput" placeholder="Add a new energy goal...">
+                    <button class="add-goal-btn" id="addGoalBtn">+</button>
+                </div>
+            </div>
+
+            <!-- Input Controls -->
+            <div class="input-controls">
+                <div class="card input-card">
+                    <h3 class="card-title"><i class="icon">💤</i> Log Sleep</h3>
+                    <input type="range" id="sleepSlider" class="input-slider" min="0" max="10" value="7.5" step="0.5">
+                    <div class="stat-value" id="sleepValue">7.5 hours</div>
+                    <button class="input-btn" id="saveSleep">Save</button>
+                </div>
+                
+                <div class="card input-card">
+                    <h3 class="card-title"><i class="icon">⚡</i> Productivity</h3>
+                    <input type="range" id="productivitySlider" class="input-slider" min="0" max="100" value="84">
+                    <div class="stat-value" id="productivityValue">84%</div>
+                    <button class="input-btn" id="saveProductivity">Save</button>
+                </div>
+                
+                <div class="card input-card">
+                    <h3 class="card-title"><i class="icon">😊</i> Mood</h3>
+                    <input type="range" id="moodSlider" class="input-slider" min="0" max="10" value="8.2" step="0.1">
+                    <div class="stat-value" id="moodValue">8.2 / 10</div>
+                    <button class="input-btn" id="saveMood">Save</button>
+                </div>
+                
+                <div class="card input-card">
+                    <h3 class="card-title"><i class="icon">🎯</i> Focus</h3>
+                    <input type="range" id="focusSlider" class="input-slider" min="0" max="100" value="76">
+                    <div class="stat-value" id="focusValue">76%</div>
+                    <button class="input-btn" id="saveFocus">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Data saved!</div>
+
+    <script>
+        // Initialize charts and visualizations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Store user data with personal preferences
+            let userData = {
+                name: "Your Energy Profile",
+                status: "Optimal Energy Level",
+                sleep: 7.5,
+                productivity: 84,
+                mood: 8.2,
+                focus: 76,
+                energyProfile: {
+                    mental: 72,
+                    physical: 65,
+                    emotional: 78
+                },
+                goals: [],
+                history: {
+                    sleep: [75, 82, 79, 88, 94, 86, 92],
+                    productivity: [65, 72, 84, 78, 89, 76, 82],
+                    mood: [7.2, 7.8, 8.2, 8.5, 9.1, 8.7, 8.9],
+                    focus: [68, 74, 76, 81, 85, 79, 83]
+                }
+            };
+
+            // Load goals from localStorage
+            function loadGoals() {
+                const savedGoals = localStorage.getItem('energyGoals');
+                if (savedGoals) {
+                    userData.goals = JSON.parse(savedGoals);
+                    renderGoals();
+                }
+            }
+
+            // Save goals to localStorage
+            function saveGoals() {
+                localStorage.setItem('energyGoals', JSON.stringify(userData.goals));
+            }
+
+            // Render goals list
+            function renderGoals() {
+                const goalsList = document.getElementById('goalsList');
+                goalsList.innerHTML = '';
+                
+                userData.goals.forEach((goal, index) => {
+                    if (!goal.completed) {
+                        const goalItem = document.createElement('div');
+                        goalItem.className = 'goal-item';
+                        goalItem.innerHTML = `
+                            <div class="goal-checkbox" data-index="${index}"></div>
+                            <div class="goal-content">
+                                <div class="goal-title">${goal.text}</div>
+                                <div class="goal-desc">Added: ${goal.date}</div>
+                            </div>
+                        `;
+                        goalsList.appendChild(goalItem);
+                    }
+                });
+                
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.goal-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('click', function() {
+                        const index = parseInt(this.getAttribute('data-index'));
+                        completeGoal(index);
+                    });
+                });
+            }
+
+            // Complete a goal
+            function completeGoal(index) {
+                userData.goals[index].completed = true;
+                saveGoals();
+                renderGoals();
+                showToast('Goal completed!');
+            }
+
+            // Add a new goal
+            document.getElementById('addGoalBtn').addEventListener('click', function() {
+                const goalInput = document.getElementById('goalInput');
+                const text = goalInput.value.trim();
+                
+                if (text && userData.goals.filter(g => !g.completed).length < 3) {
+                    userData.goals.push({
+                        text: text,
+                        date: new Date().toLocaleDateString(),
+                        completed: false
+                    });
+                    
+                    saveGoals();
+                    renderGoals();
+                    goalInput.value = '';
+                    showToast('New goal added!');
+                } else if (userData.goals.filter(g => !g.completed).length >= 3) {
+                    showToast('Maximum 3 active goals allowed. Complete one first.');
+                }
+            });
+
+            // Update user info
+            document.getElementById('userName').textContent = userData.name;
+            document.getElementById('userStatus').textContent = userData.status;
+
+            // Update energy profile bars
+            function updateEnergyProfile() {
+                document.getElementById('mentalValue').textContent = userData.energyProfile.mental + '%';
+                document.getElementById('mentalFill').style.width = userData.energyProfile.mental + '%';
+                
+                document.getElementById('physicalValue').textContent = userData.energyProfile.physical + '%';
+                document.getElementById('physicalFill').style.width = userData.energyProfile.physical + '%';
+                
+                document.getElementById('emotionalValue').textContent = userData.energyProfile.emotional + '%';
+                document.getElementById('emotionalFill').style.width = userData.energyProfile.emotional + '%';
+            }
+
+            // Toast notification
+            const toast = document.getElementById('toast');
+            function showToast(message) {
+                toast.textContent = message;
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            // Generate wave data based on user inputs
+            // FIXED: Now the wave rises with higher values and falls with lower values
+            const generateWaveData = (time) => {
+                const data = [];
+                // Calculate average energy level from user inputs
+                // Higher values = bigger waves, lower values = smaller waves
+                const avgEnergy = (userData.sleep / 10 * 25) + 
+                                 (userData.productivity / 100 * 25) + 
+                                 (userData.mood / 10 * 25) + 
+                                 (userData.focus / 100 * 25);
+                
+                // Base amplitude scales with energy level (higher energy = bigger waves)
+                const baseAmplitude = avgEnergy;
+                
+                for (let x = 0; x < 100; x++) {
+                    // Create a wave that responds to energy level
+                    // Higher energy = taller waves, lower energy = shorter waves
+                    const y = Math.sin(x / 10 + time/1000) * (baseAmplitude/2) + 
+                             Math.sin(x / 5 + time/800) * (baseAmplitude/4) + 
+                             Math.sin(x / 2 + time/600) * (baseAmplitude/8);
+                    data.push(y);
+                }
+                return data;
+            };
+
+            // Energy Wave Visualization
+            const waveCanvas = document.getElementById('energyWave');
+            const waveCtx = waveCanvas.getContext('2d');
+            
+            // Set canvas dimensions
+            function setCanvasDimensions() {
+                waveCanvas.width = waveCanvas.offsetWidth;
+                waveCanvas.height = waveCanvas.offsetHeight;
+            }
+            
+            setCanvasDimensions();
+            
+            // Animation control
+            let animationId = null;
+            let lastTime = 0;
+            const throttleMs = 16; // ~60fps
+            
+            // Draw energy wave with requestAnimationFrame for smooth animation
+            function drawEnergyWave(time) {
+                if (!lastTime) lastTime = time;
+                const elapsed = time - lastTime;
+                
+                if (elapsed > throttleMs) {
+                    lastTime = time;
+                    
+                    const width = waveCanvas.width;
+                    const height = waveCanvas.height;
+                    const data = generateWaveData(time);
+                    
+                    // Clear canvas
+                    waveCtx.clearRect(0, 0, width, height);
+                    
+                    // Create vertical gradient for wave
+                    const gradient = waveCtx.createLinearGradient(0, 0, 0, height);
+                    gradient.addColorStop(0, 'rgba(126, 34, 206, 0.8)');
+                    gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.8)');
+                    gradient.addColorStop(1, 'rgba(6, 182, 212, 0.8)');
+                    
+                    // Draw wave
+                    waveCtx.beginPath();
+                    waveCtx.moveTo(0, height / 2);
+                    
+                    for (let i = 0; i < data.length; i++) {
+                        const x = (i / data.length) * width;
+                        const y = (height / 2) + data[i];
+                        waveCtx.lineTo(x, y);
+                    }
+                    
+                    waveCtx.strokeStyle = gradient;
+                    waveCtx.lineWidth = 3;
+                    waveCtx.stroke();
+                    
+                    // Fill with subtle gradient
+                    waveCtx.lineTo(width, height);
+                    waveCtx.lineTo(0, height);
+                    waveCtx.closePath();
+                    
+                    const fillGradient = waveCtx.createLinearGradient(0, 0, 0, height);
+                    fillGradient.addColorStop(0, 'rgba(126, 34, 206, 0.2)');
+                    fillGradient.addColorStop(1, 'rgba(126, 34, 206, 0.01)');
+                    
+                    waveCtx.fillStyle = fillGradient;
+                    waveCtx.fill();
+                    
+                    // Reduced glow effect for performance
+                    waveCtx.shadowColor = 'rgba(126, 34, 206, 0.3)';
+                    waveCtx.shadowBlur = 8;
+                    waveCtx.stroke();
+                    waveCtx.shadowBlur = 0;
+                }
+                
+                // Continue animation
+                animationId = requestAnimationFrame(drawEnergyWave);
+            }
+            
+            // Start animation
+            function startAnimation() {
+                if (!animationId) {
+                    lastTime = 0;
+                    animationId = requestAnimationFrame(drawEnergyWave);
+                }
+            }
+            
+            // Stop animation
+            function stopAnimation() {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            }
+            
+            // Handle window resize with debounce
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    stopAnimation();
+                    setCanvasDimensions();
+                    startAnimation();
+                }, 250);
+            });
+            
+            // Start animation
+            startAnimation();
+            
+            // Stop animation when tab is not visible
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopAnimation();
+                } else {
+                    startAnimation();
+                }
+            });
+            
+            // Chart instances
+            const charts = {};
+            
+            // Daily Rhythm chart
+            const rhythmCtx = document.getElementById('rhythmChart').getContext('2d');
+            charts.rhythm = new Chart(rhythmCtx, {
+                type: 'line',
+                data: {
+                    labels: ['6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM'],
+                    datasets: [
+                        {
+                            label: 'Energy',
+                            data: [30, 75, 85, 82, 70, 45, 35],
+                            borderColor: '#7e22ce',
+                            backgroundColor: 'rgba(126, 34, 206, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Focus',
+                            data: [40, 80, 88, 84, 75, 50, 30],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#cbd5e1'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#cbd5e1'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#cbd5e1'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Energy Distribution chart
+            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+            charts.distribution = new Chart(distributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mental', 'Physical', 'Emotional', 'Spiritual'],
+                    datasets: [{
+                        data: [35, 25, 30, 10],
+                        backgroundColor: [
+                            'rgba(126, 34, 206, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(22, 163, 74, 0.8)',
+                            'rgba(168, 85, 247, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgrable(126, 34, 206, 1)',
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(22, 163, 74, 1)',
+                            'rgba(168, 85, 247, 1)'
+                        ],
+                        borderWidth: 1,
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#cbd5e1',
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%',
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+            
+            // Update all display values
+            function updateAllDisplays() {
+                const sliders = [
+                    { id: 'sleepSlider', valueId: 'sleepValue', suffix: ' hours', currentId: 'currentSleep', key: 'sleep' },
+                    { id: 'productivitySlider', valueId: 'productivityValue', suffix: '%', currentId: 'currentProductivity', key: 'productivity' },
+                    { id: 'moodSlider', valueId: 'moodValue', suffix: ' / 10', currentId: 'currentMood', key: 'mood' },
+                    { id: 'focusSlider', valueId: 'focusValue', suffix: '%', currentId: 'currentFocus', key: 'focus' }
+                ];
+                
+                sliders.forEach(({ id, valueId, suffix, currentId, key }) => {
+                    const slider = document.getElementById(id);
+                    const valueDisplay = document.getElementById(valueId);
+                    const currentDisplay = document.getElementById(currentId);
+                    
+                    if (slider && valueDisplay && currentDisplay) {
+                        valueDisplay.textContent = slider.value + suffix;
+                        if (key === 'sleep') {
+                            const hours = Math.floor(slider.value);
+                            const minutes = Math.round((slider.value % 1) * 60);
+                            currentDisplay.textContent = `${hours}h ${minutes}m`;
+                        } else if (key === 'mood') {
+                            currentDisplay.textContent = slider.value;
+                        } else {
+                            currentDisplay.textContent = `${slider.value}%`;
+                        }
+                    }
+                });
+            }
+            
+            // Real-time updates for sliders
+            const sliders = [
+                { id: 'sleepSlider', valueId: 'sleepValue', suffix: ' hours', currentId: 'currentSleep', key: 'sleep', chart: 'sleep' },
+                { id: 'productivitySlider', valueId: 'productivityValue', suffix: '%', currentId: 'currentProductivity', key: 'productivity', chart: 'productivity' },
+                { id: 'moodSlider', valueId: 'moodValue', suffix: ' / 10', currentId: 'currentMood', key: 'mood', chart: 'mood' },
+                { id: 'focusSlider', valueId: 'focusValue', suffix: '%', currentId: 'currentFocus', key: 'focus', chart: 'focus' }
+            ];
+            
+            sliders.forEach(({ id, valueId, suffix, currentId, key }) => {
+                const slider = document.getElementById(id);
+                const valueDisplay = document.getElementById(valueId);
+                
+                if (slider && valueDisplay) {
+                    slider.addEventListener('input', () => {
+                        valueDisplay.textContent = slider.value + suffix;
+                        
+                        // Real-time update for stats
+                        const currentDisplay = document.getElementById(currentId);
+                        if (currentDisplay) {
+                            if (key === 'sleep') {
+                                const hours = Math.floor(slider.value);
+                                const minutes = Math.round((slider.value % 1) * 60);
+                                currentDisplay.textContent = `${hours}h ${minutes}m`;
+                            } else if (key === 'mood') {
+                                currentDisplay.textContent = slider.value;
+                            } else {
+                                currentDisplay.textContent = `${slider.value}%`;
+                            }
+                        }
+                        
+                        // Update the wave in real-time
+                        userData[key] = parseFloat(slider.value);
+                    });
+                }
+            });
+            
+            // Save button functionality
+            const saveButtons = [
+                { id: 'saveSleep', key: 'sleep', sliderId: 'sleepSlider', chart: 'sleep' },
+                { id: 'saveProductivity', key: 'productivity', sliderId: 'productivitySlider', chart: 'productivity' },
+                { id: 'saveMood', key: 'mood', sliderId: 'moodSlider', chart: 'mood' },
+                { id: 'saveFocus', key: 'focus', sliderId: 'focusSlider', chart: 'focus' }
+            ];
+            
+            saveButtons.forEach(({ id, key, sliderId, chart }) => {
+                const button = document.getElementById(id);
+                const slider = document.getElementById(sliderId);
+                const currentDisplay = document.getElementById(`current${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                
+                if (button && slider && currentDisplay) {
+                    button.addEventListener('click', () => {
+                        // Update user data
+                        userData[key] = parseFloat(slider.value);
+                        
+                        // Update energy profile based on new values
+                        updateEnergyProfileBasedOnInputs();
+                        
+                        // Show success message
+                        showToast('Data saved!');
+                    });
+                }
+            });
+            
+            // Update energy profile based on inputs
+            function updateEnergyProfileBasedOnInputs() {
+                // Calculate energy profile based on inputs
+                userData.energyProfile.mental = Math.min(100, Math.round(
+                    (userData.focus * 0.6) + (userData.productivity * 0.4)
+                ));
+                
+                userData.energyProfile.physical = Math.min(100, Math.round(
+                    (userData.sleep / 10 * 100 * 0.7) + (userData.productivity * 0.3)
+                ));
+                
+                userData.energyProfile.emotional = Math.min(100, Math.round(
+                    (userData.mood / 10 * 100 * 0.8) + (userData.sleep / 10 * 100 * 0.2)
+                ));
+                
+                // Update UI
+                updateEnergyProfile();
+                
+                // Update user status based on energy levels
+                updateUserStatus();
+            }
+            
+            // Update user status based on energy levels
+            function updateUserStatus() {
+                const avgEnergy = (userData.energyProfile.mental + userData.energyProfile.physical + userData.energyProfile.emotional) / 3;
+                
+                if (avgEnergy >= 80) {
+                    userData.status = "Optimal Energy Level";
+                } else if (avgEnergy >= 60) {
+                    userData.status = "Good Energy Level";
+                } else if (avgEnergy >= 40) {
+                    userData.status = "Medium Energy Level";
+                } else {
+                    userData.status = "Low Energy Level";
+                }
+                
+                document.getElementById('userStatus').textContent = userData.status;
+            }
+            
+            // Wave controls functionality
+            const waveButtons = document.querySelectorAll('.wave-btn');
+            waveButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    waveButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    showToast('View updated: ' + button.textContent);
+                });
+            });
+            
+            // Initialize the application
+            function initApp() {
+                // Update all displays
+                updateAllDisplays();
+                
+                // Update energy profile
+                updateEnergyProfile();
+                
+                // Load and render goals
+                loadGoals();
+                
+                // Add pulse animation to stats
+                const stats = document.querySelectorAll('.stat-item');
+                stats.forEach((stat, index) => {
+                    setTimeout(() => {
+                        stat.classList.add('pulse');
+                    }, index * 300);
+                });
+            }
+            
+            // Start the app
+            initApp();
+        });
+    </script>
+</body>
+</html>
